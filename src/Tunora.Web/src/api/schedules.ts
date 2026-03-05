@@ -1,4 +1,4 @@
-import apiClient from './client';
+import { apiClient } from './client';
 import type { Schedule, CreateScheduleRequest, UpdateScheduleRequest } from '../types/schedules';
 
 const base = (instanceId: number) => `/instances/${instanceId}/schedules`;

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { instancesApi } from '../../api/instances';
 import { channelsApi } from '../../api/channels';
-import type { Instance } from '../../types/instances';
+import type { Instance, InstanceCreated } from '../../types/instances';
 
 interface Props {
   instance: Instance | null;
@@ -29,7 +29,7 @@ export default function InstanceModal({ instance, onClose }: Props) {
   const assignedIds = new Set(saved?.channels.map(c => c.channelId) ?? []);
 
   const saveMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (): Promise<Instance | InstanceCreated> =>
       isEdit
         ? instancesApi.update(instance!.id, { name, location }).then(r => r.data)
         : instancesApi.create({ name, location }).then(r => r.data),
