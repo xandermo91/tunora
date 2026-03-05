@@ -121,8 +121,7 @@ export default function BillingPage() {
           return (
             <div
               key={plan.tier}
-              className={`rounded-xl px-5 py-5 flex flex-col ${
-                plan.highlighted
+              className={`rounded-xl px-5 py-5 flex flex-col ${'highlighted' in plan && plan.highlighted
                   ? 'bg-sp-green/10 border border-sp-green/30'
                   : 'bg-sp-gray'
               }`}
@@ -131,7 +130,7 @@ export default function BillingPage() {
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sp-white font-bold text-sm">{plan.tier}</span>
-                  {plan.highlighted && (
+                  {'highlighted' in plan && plan.highlighted && (
                     <span className="text-xs text-sp-green font-medium">Popular</span>
                   )}
                 </div>
@@ -161,8 +160,7 @@ export default function BillingPage() {
                 <button
                   onClick={() => checkoutMutation.mutate(plan.tier)}
                   disabled={checkoutMutation.isPending}
-                  className={`w-full py-2 rounded-full text-sm font-bold transition-colors disabled:opacity-60 ${
-                    plan.highlighted
+                  className={`w-full py-2 rounded-full text-sm font-bold transition-colors disabled:opacity-60 ${'highlighted' in plan && plan.highlighted
                       ? 'bg-sp-green hover:bg-sp-green-hover text-sp-black'
                       : 'bg-sp-lightgray hover:bg-sp-lightgray/80 text-sp-white'
                   }`}

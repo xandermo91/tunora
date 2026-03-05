@@ -19,7 +19,7 @@ export default function InstanceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const instanceId = Number(id);
   const navigate = useNavigate();
-  const token = useAuthStore(s => s.token);
+  const token = useAuthStore(s => s.accessToken);
 
   const { connect, watchInstance, connection } = useSignalRStore();
   const [liveState, setLiveState] = useState<Partial<Instance>>({});
