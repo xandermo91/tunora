@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* ── Spotify-inspired custom theme colors ─────────────────────────────── */
+@theme {
+  --color-sp-black:       #191414;
+  --color-sp-darkgray:    #121212;
+  --color-sp-gray:        #282828;
+  --color-sp-lightgray:   #3E3E3E;
+  --color-sp-green:       #1DB954;
+  --color-sp-green-hover: #1ed760;
+  --color-sp-white:       #FFFFFF;
+  --color-sp-subtext:     #B3B3B3;
+}
+
+body {
+  margin: 0;
+  background-color: #121212;
+  color: #FFFFFF;
+  font-family: 'Circular', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Thin custom scrollbar matching Spotify style */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #121212; }
+::-webkit-scrollbar-thumb { background: #3E3E3E; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #B3B3B3; }

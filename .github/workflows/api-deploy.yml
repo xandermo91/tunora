@@ -1,0 +1,32 @@
+name: API Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/Tunora.API/**'
+      - 'src/Tunora.Core/**'
+      - 'src/Tunora.Infrastructure/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore & build
+        run: |
+          dotnet restore Tunora.sln
+          dotnet publish src/Tunora.API/Tunora.API.csproj -c Release -o publish/api
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: publish/api

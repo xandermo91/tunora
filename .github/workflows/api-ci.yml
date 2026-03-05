@@ -1,0 +1,29 @@
+name: API CI
+
+on:
+  pull_request:
+    paths:
+      - 'src/Tunora.API/**'
+      - 'src/Tunora.Core/**'
+      - 'src/Tunora.Infrastructure/**'
+      - 'tests/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore Tunora.sln
+
+      - name: Build
+        run: dotnet build Tunora.sln --no-restore -c Release
+
+      - name: Test
+        run: dotnet test Tunora.sln --no-build -c Release --logger "trx;LogFileName=results.trx"
