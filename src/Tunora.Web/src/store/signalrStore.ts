@@ -1,4 +1,4 @@
-// SignalR store — manages real-time connection to Tunora API
+// SignalR store — real-time connection to Tunora API
 import { HubConnectionBuilder, HubConnection, LogLevel, HubConnectionState } from '@microsoft/signalr';
 import { create } from 'zustand';
 import { useAuthStore } from './authStore';
