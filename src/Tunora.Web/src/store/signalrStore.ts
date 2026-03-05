@@ -21,7 +21,7 @@ export const useSignalRStore = create<SignalRStore>((set, get) => ({
     if (existing?.state === HubConnectionState.Connected) return;
 
     const conn = new HubConnectionBuilder()
-      .withUrl(HUB_URL, { accessTokenFactory: () => useAuthStore.getState().token ?? token })
+      .withUrl(HUB_URL, { accessTokenFactory: () => useAuthStore.getState().accessToken ?? token })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Warning)
       .build();
