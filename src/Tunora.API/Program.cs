@@ -105,8 +105,23 @@ builder.Services.AddHttpClient<JamendoClient>((sp, client) =>
 builder.Services.AddSignalR();
 
 // ── CORS ────────────────────────────────────────────────────────────────────
-var corsOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>()
-    ?? ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"];
+// Supports two formats:
+//   1. CORS_ORIGINS env var — comma-separated list (simplest for Azure)
+//   2. CorsOrigins array in config — CorsOrigins__0, CorsOrigins__1, ...
+var corsOriginsEnv = builder.Configuration["CORS_ORIGINS"];
+string[] corsOrigins;
+if (!string.IsNullOrWhiteSpace(corsOriginsEnv))
+{
+    corsOrigins = corsOriginsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+}
+else
+{
+    corsOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>()
+        ?? ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"];
+}
+
+var startupLogger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger("Startup");
+startupLogger.LogInformation("CORS origins configured: {Origins}", string.Join(", ", corsOrigins));
 
 builder.Services.AddCors(options =>
 {
