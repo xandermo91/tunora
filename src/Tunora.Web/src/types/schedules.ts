@@ -13,7 +13,6 @@ export interface Schedule {
 }
 
 export interface CreateScheduleRequest {
-  name: string;
   channelId: number;
   daysOfWeek: number[];
   startTime: string;

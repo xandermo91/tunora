@@ -14,14 +14,12 @@ public record ScheduleDto(
     DateTime CreatedAt);
 
 public record CreateScheduleDto(
-    string Name,
     int ChannelId,
     int[] DaysOfWeek,
     string StartTime,
     string EndTime);
 
 public record UpdateScheduleDto(
-    string Name,
     int ChannelId,
     int[] DaysOfWeek,
     string StartTime,

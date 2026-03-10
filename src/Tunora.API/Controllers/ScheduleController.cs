@@ -6,7 +6,7 @@ using Tunora.Infrastructure.Services;
 namespace Tunora.API.Controllers;
 
 [Route("api/v1/instances/{instanceId:int}/schedules")]
-public class ScheduleController(IScheduleService scheduleService) : ApiControllerBase
+public class ScheduleController(IScheduleService scheduleService, ITierLimitService tierLimitService) : ApiControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List(int instanceId, CancellationToken ct)
@@ -18,8 +18,9 @@ public class ScheduleController(IScheduleService scheduleService) : ApiControlle
     [HttpPost]
     public async Task<IActionResult> Create(int instanceId, [FromBody] CreateScheduleDto dto, CancellationToken ct)
     {
+        await tierLimitService.EnforceSchedulingAccessAsync(CompanyId, ct);
+
         var req = new CreateScheduleRequest(
-            dto.Name,
             dto.ChannelId,
             dto.DaysOfWeek.Select(d => (DayOfWeek)d).ToArray(),
             TimeOnly.Parse(dto.StartTime),
@@ -33,7 +34,6 @@ public class ScheduleController(IScheduleService scheduleService) : ApiControlle
     public async Task<IActionResult> Update(int instanceId, int id, [FromBody] UpdateScheduleDto dto, CancellationToken ct)
     {
         var req = new UpdateScheduleRequest(
-            dto.Name,
             dto.ChannelId,
             dto.DaysOfWeek.Select(d => (DayOfWeek)d).ToArray(),
             TimeOnly.Parse(dto.StartTime),

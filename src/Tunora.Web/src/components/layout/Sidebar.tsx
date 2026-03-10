@@ -5,8 +5,6 @@ import { authApi } from '../../api/auth';
 const navItems = [
   { to: '/dashboard',  label: 'Overview',  icon: '⊞' },
   { to: '/instances',  label: 'Locations', icon: '📍' },
-  { to: '/schedule',   label: 'Schedule',  icon: '🗓' },
-  { to: '/channels',   label: 'Channels',  icon: '🎵' },
   { to: '/billing',    label: 'Billing',   icon: '💳' },
   { to: '/settings',   label: 'Settings',  icon: '⚙' },
 ];

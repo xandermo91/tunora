@@ -4,6 +4,9 @@ import type { Schedule, CreateScheduleRequest, UpdateScheduleRequest } from '../
 const base = (instanceId: number) => `/instances/${instanceId}/schedules`;
 
 export const schedulesApi = {
+  listAll: () =>
+    apiClient.get<(Schedule & { instanceName: string })[]>('/schedules'),
+
   list:   (instanceId: number) =>
     apiClient.get<Schedule[]>(base(instanceId)),
 

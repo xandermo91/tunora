@@ -194,13 +194,13 @@ export default function InstanceDetailPage() {
         <h2 className="text-sp-white font-semibold text-sm mb-1">Player Setup</h2>
         <p className="text-sp-subtext text-xs mb-3">
           Open the player URL in a browser (kiosk mode), then enter the Connection Key to pair it with this location.
-          Player URL: <code className="text-sp-subtext font-mono">http://localhost:5175/?key=&lt;ConnectionKey&gt;</code>
+          Player URL: <code className="text-sp-subtext font-mono">{import.meta.env.VITE_PLAYER_URL ?? 'http://localhost:5175'}/?key=&lt;ConnectionKey&gt;</code>
         </p>
         <RevealConnectionKey instanceId={instanceId} />
       </div>
 
       {/* Schedules */}
-      <ScheduleList instanceId={instanceId} channels={merged.channels} />
+      <ScheduleList instanceId={instanceId} />
 
     </div>
   );

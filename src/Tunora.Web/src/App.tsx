@@ -9,6 +9,7 @@ import OverviewPage from './pages/OverviewPage';
 import InstancesPage from './pages/InstancesPage';
 import InstanceDetailPage from './pages/InstanceDetailPage';
 import BillingPage from './pages/BillingPage';
+import SettingsPage from './pages/SettingsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="instances"          element={<InstancesPage />} />
             <Route path="instances/:id"      element={<InstanceDetailPage />} />
             <Route path="billing"            element={<BillingPage />} />
+            <Route path="settings"           element={<SettingsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

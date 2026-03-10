@@ -17,6 +17,15 @@ public class ScheduleService(ApplicationDbContext db, ISchedulerFactory schedule
             .OrderBy(s => s.StartTime)
             .ToListAsync(ct);
 
+    public async Task<List<Schedule>> GetByCompanyAsync(int companyId, CancellationToken ct = default) =>
+        await db.Schedules
+            .AsNoTracking()
+            .Include(s => s.Channel)
+            .Include(s => s.Instance)
+            .Where(s => s.Instance.CompanyId == companyId && s.Instance.IsActive)
+            .OrderBy(s => s.Instance.Name).ThenBy(s => s.StartTime)
+            .ToListAsync(ct);
+
     public async Task<List<Schedule>> GetAllActiveAsync(CancellationToken ct = default)
     {
         // DaysOfWeek is stored as JSON — filter its length in memory after the SQL query
@@ -37,11 +46,13 @@ public class ScheduleService(ApplicationDbContext db, ISchedulerFactory schedule
         var channel = await db.Channels.FirstOrDefaultAsync(c => c.Id == req.ChannelId && c.IsActive, ct)
             ?? throw new NotFoundException($"Channel {req.ChannelId} not found.");
 
+        await ValidateNoOverlapAsync(instanceId, null, req.DaysOfWeek, req.StartTime, req.EndTime, ct);
+
         var schedule = new Schedule
         {
             InstanceId = instanceId,
             ChannelId  = req.ChannelId,
-            Name       = req.Name,
+            Name       = $"{channel.Name} {req.StartTime:HH\\:mm}–{req.EndTime:HH\\:mm}",
             DaysOfWeek = req.DaysOfWeek,
             StartTime  = req.StartTime,
             EndTime    = req.EndTime,
@@ -64,17 +75,20 @@ public class ScheduleService(ApplicationDbContext db, ISchedulerFactory schedule
             .FirstOrDefaultAsync(s => s.Id == id && s.Instance.CompanyId == companyId, ct)
             ?? throw new NotFoundException($"Schedule {id} not found.");
 
+        var channel = req.ChannelId != schedule.Channel.Id
+            ? (await db.Channels.FindAsync([req.ChannelId], ct) ?? throw new NotFoundException($"Channel {req.ChannelId} not found."))
+            : schedule.Channel;
+
+        await ValidateNoOverlapAsync(schedule.InstanceId, id, req.DaysOfWeek, req.StartTime, req.EndTime, ct);
         await UnregisterFromQuartzAsync(id, ct);
 
-        schedule.Name       = req.Name;
+        schedule.Name       = $"{channel.Name} {req.StartTime:HH\\:mm}–{req.EndTime:HH\\:mm}";
         schedule.ChannelId  = req.ChannelId;
         schedule.DaysOfWeek = req.DaysOfWeek;
         schedule.StartTime  = req.StartTime;
         schedule.EndTime    = req.EndTime;
         schedule.IsActive   = req.IsActive;
-
-        if (req.ChannelId != schedule.Channel.Id)
-            schedule.Channel = (await db.Channels.FindAsync([req.ChannelId], ct))!;
+        schedule.Channel    = channel;
 
         await db.SaveChangesAsync(ct);
 
@@ -122,6 +136,35 @@ public class ScheduleService(ApplicationDbContext db, ISchedulerFactory schedule
 
         await scheduler.ScheduleJob(startTrigger, ct);
         await scheduler.ScheduleJob(stopTrigger,  ct);
+    }
+
+    private async Task ValidateNoOverlapAsync(
+        int instanceId, int? excludeId,
+        DayOfWeek[] days, TimeOnly start, TimeOnly end,
+        CancellationToken ct)
+    {
+        // DaysOfWeek is JSON — load in memory, then filter
+        var existing = await db.Schedules
+            .AsNoTracking()
+            .Where(s => s.InstanceId == instanceId && s.IsActive &&
+                        (excludeId == null || s.Id != excludeId))
+            .ToListAsync(ct);
+
+        foreach (var s in existing)
+        {
+            if (!s.DaysOfWeek.Any(d => days.Contains(d))) continue;
+            if (TimeRangesOverlap(start, end, s.StartTime, s.EndTime))
+                throw new ValidationException("This time slot overlaps with an existing schedule.");
+        }
+    }
+
+    private static bool TimeRangesOverlap(TimeOnly s1, TimeOnly e1, TimeOnly s2, TimeOnly e2)
+    {
+        int a0 = s1.Hour * 60 + s1.Minute, a1 = e1.Hour * 60 + e1.Minute;
+        int b0 = s2.Hour * 60 + s2.Minute, b1 = e2.Hour * 60 + e2.Minute;
+        if (a1 <= a0) a1 += 1440;   // midnight crossing
+        if (b1 <= b0) b1 += 1440;
+        return (a0 < b1 && b0 < a1) || (a0 < b1 + 1440 && b0 + 1440 < a1);
     }
 
     private async Task UnregisterFromQuartzAsync(int scheduleId, CancellationToken ct = default)

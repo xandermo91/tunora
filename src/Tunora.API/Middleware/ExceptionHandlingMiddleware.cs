@@ -22,6 +22,12 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
             context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
             await context.Response.WriteAsJsonAsync(new { error = ex.Message });
         }
+        catch (ValidationException ex)
+        {
+            logger.LogWarning(ex, "Validation error: {Message}", ex.Message);
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+        }
         catch (UnauthorizedAccessException ex)
         {
             logger.LogWarning(ex, "Unauthorized: {Message}", ex.Message);
