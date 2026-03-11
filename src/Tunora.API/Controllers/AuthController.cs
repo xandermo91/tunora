@@ -60,4 +60,18 @@ public class AuthController(IAuthService authService) : ControllerBase
         await authService.LogoutAsync(userId, ct);
         return NoContent();
     }
+
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto, CancellationToken ct)
+    {
+        if (!int.TryParse(User.FindFirstValue("sub"), out var userId))
+            return Unauthorized();
+
+        var changed = await authService.ChangePasswordAsync(userId, dto.CurrentPassword, dto.NewPassword, ct);
+        if (!changed)
+            return BadRequest(new { error = "Current password is incorrect." });
+
+        return NoContent();
+    }
 }

@@ -81,6 +81,17 @@ public class AuthService(ApplicationDbContext db, IOptions<JwtOptions> jwtOption
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken ct = default)
+    {
+        var user = await db.Users.FindAsync([userId], ct);
+        if (user is null || !BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+            return false;
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: 12);
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
     private async Task<AuthResult> IssueTokensAsync(User user, CancellationToken ct)
     {
         var rawToken = GenerateRefreshToken();

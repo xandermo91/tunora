@@ -21,7 +21,7 @@ public class JamendoClient(HttpClient http, IOptions<JamendoOptions> options)
     {
         var offset = Random.Shared.Next(0, 50);
         var url = $"tracks/?client_id={_opts.ClientId}&format=json&limit=1" +
-                  $"&tags={Uri.EscapeDataString(tag)}&audioformat=mp32&offset={offset}&imagesize=500";
+                  $"&tags={Uri.EscapeDataString(tag)}&audioformat=mp3&offset={offset}&imagesize=500";
 
         var response = await http.GetFromJsonAsync<JamendoResponse>(url, ct);
         var track = response?.Results?.FirstOrDefault();

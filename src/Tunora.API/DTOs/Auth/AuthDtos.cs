@@ -23,3 +23,8 @@ public record AuthResponseDto(
     string AccessToken,
     string RefreshToken
 );
+
+public record ChangePasswordDto(
+    [Required] string CurrentPassword,
+    [Required, MinLength(8), MaxLength(128)] string NewPassword
+);

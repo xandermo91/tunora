@@ -20,6 +20,9 @@ public class PlaybackController(
         var instance = await instanceService.GetByIdAsync(id, CompanyId, ct);
         if (instance is null) return NotFound(new { error = "Instance not found." });
 
+        if (!instance.InstanceChannels.Any(ic => ic.ChannelId == dto.ChannelId))
+            return BadRequest(new { error = "Channel is not assigned to this instance." });
+
         await playbackService.UpdateInstanceStateAsync(id, InstanceStatus.Online, dto.ChannelId, null, null, ct);
 
         await hub.Clients.Group($"instance-{id}")
@@ -65,6 +68,9 @@ public class PlaybackController(
     {
         var instance = await instanceService.GetByIdAsync(id, CompanyId, ct);
         if (instance is null) return NotFound(new { error = "Instance not found." });
+
+        if (!instance.InstanceChannels.Any(ic => ic.ChannelId == dto.ChannelId))
+            return BadRequest(new { error = "Channel is not assigned to this instance." });
 
         await playbackService.UpdateInstanceStateAsync(id, InstanceStatus.Online, dto.ChannelId, null, null, ct);
 
