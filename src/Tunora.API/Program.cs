@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,6 +26,7 @@ builder.Services.AddOptions<JwtOptions>()
     .ValidateOnStart();
 builder.Services.Configure<JamendoOptions>(builder.Configuration.GetSection("JamendoOptions"));
 builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("StripeOptions"));
+builder.Services.Configure<ClaudeOptions>(builder.Configuration.GetSection("ClaudeOptions"));
 
 // ── Authentication / JWT ────────────────────────────────────────────────────
 var jwtOptions = builder.Configuration.GetSection("JwtOptions").Get<JwtOptions>()!;
@@ -61,16 +63,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// ── Rate Limiting — auth endpoints only ─────────────────────────────────────
+// ── Rate Limiting ────────────────────────────────────────────────────────────
 builder.Services.AddRateLimiter(opts =>
 {
     opts.AddFixedWindowLimiter("auth", o =>
     {
-        o.PermitLimit         = 10;
-        o.Window              = TimeSpan.FromMinutes(1);
+        o.PermitLimit          = 10;
+        o.Window               = TimeSpan.FromMinutes(1);
         o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        o.QueueLimit          = 0;
+        o.QueueLimit           = 0;
     });
+    // Advisor rate limit is partitioned per company so one tenant can't exhaust the budget for others
+    opts.AddPolicy("advisor", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User.FindFirstValue("companyId") ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit          = 5,
+                Window               = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit           = 0,
+            }));
     opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
@@ -99,6 +112,17 @@ builder.Services.AddHttpClient<JamendoClient>((sp, client) =>
 {
     var opts = builder.Configuration.GetSection("JamendoOptions").Get<JamendoOptions>()!;
     client.BaseAddress = new Uri(opts.BaseUrl);
+});
+
+// ── Claude AI Advisor ────────────────────────────────────────────────────────
+// Single registration: typed client wires IClaudeAdvisorService → ClaudeAdvisorService
+// with the pre-configured HttpClient (x-api-key header set at startup).
+builder.Services.AddHttpClient<IClaudeAdvisorService, ClaudeAdvisorService>((sp, client) =>
+{
+    var apiKey = builder.Configuration["ClaudeOptions:ApiKey"] ?? "";
+    client.BaseAddress = new Uri("https://api.anthropic.com/v1/");
+    client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+    client.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
 });
 
 // ── SignalR ──────────────────────────────────────────────────────────────────

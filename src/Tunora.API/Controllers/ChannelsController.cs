@@ -5,6 +5,8 @@ using Tunora.Infrastructure.Data;
 
 namespace Tunora.API.Controllers;
 
+// Direct DbContext injection is intentional here — channels are read-only catalog data
+// with no business logic. A service wrapper would add indirection for no benefit.
 [Route("api/v1/channels")]
 public class ChannelsController(ApplicationDbContext db) : ApiControllerBase
 {

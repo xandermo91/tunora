@@ -12,7 +12,6 @@ public class Schedule : IAuditableEntity
     public TimeOnly StartTime { get; set; }
     public TimeOnly EndTime { get; set; }
     public bool IsActive { get; set; } = true;
-    public string? QuartzJobKey { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

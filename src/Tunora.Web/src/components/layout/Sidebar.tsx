@@ -1,5 +1,6 @@
 ﻿import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { useSignalRStore } from '../../store/signalrStore';
 import { authApi } from '../../api/auth';
 
 const navItems = [
@@ -11,9 +12,11 @@ const navItems = [
 
 export default function Sidebar() {
   const { user, clearAuth } = useAuthStore();
+  const disconnect = useSignalRStore(s => s.disconnect);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    try { await disconnect(); } catch { /* ignore */ }
     try { await authApi.logout(); } catch { /* ignore */ }
     clearAuth();
     navigate('/login');

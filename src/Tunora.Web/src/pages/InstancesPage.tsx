@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { instancesApi } from '../api/instances';
 import InstanceModal from '../components/instances/InstanceModal';
+import { parseApiError } from '../utils/errors';
 import type { Instance } from '../types/instances';
 
 const STATUS_STYLE: Record<string, string> = {
@@ -16,6 +17,7 @@ export default function InstancesPage() {
   const qc = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Instance | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: instances = [], isLoading } = useQuery({
     queryKey: ['instances'],
@@ -25,6 +27,7 @@ export default function InstancesPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => instancesApi.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['instances'] }),
+    onError: (err) => setDeleteError(parseApiError(err, 'Failed to delete location.')),
   });
 
   const openAdd  = () => { setEditing(null); setModalOpen(true); };
@@ -46,6 +49,13 @@ export default function InstancesPage() {
         </button>
       </div>
 
+      {deleteError && (
+        <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg px-5 py-3 text-red-400 text-sm flex items-center justify-between">
+          {deleteError}
+          <button onClick={() => setDeleteError(null)} className="ml-4 text-red-400/60 hover:text-red-400 transition-colors">✕</button>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="text-sp-subtext text-center py-16">Loading…</div>
       ) : instances.length === 0 ? (
@@ -62,6 +72,7 @@ export default function InstancesPage() {
         </div>
       ) : (
         <div className="bg-sp-gray rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-sp-lightgray/40">
@@ -123,12 +134,14 @@ export default function InstancesPage() {
                       <button
                         onClick={() => {
                           if (window.confirm(`Delete "${inst.name}"? This cannot be undone.`)) {
+                            setDeleteError(null);
                             deleteMutation.mutate(inst.id);
                           }
                         }}
-                        className="text-sp-subtext hover:text-red-400 text-xs transition-colors"
+                        disabled={deleteMutation.isPending}
+                        className="text-sp-subtext hover:text-red-400 text-xs transition-colors disabled:opacity-50"
                       >
-                        Delete
+                        {deleteMutation.isPending ? '…' : 'Delete'}
                       </button>
                     </div>
                   </td>
@@ -136,6 +149,7 @@ export default function InstancesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

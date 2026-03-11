@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { billingApi } from '../api/billing';
+import { parseApiError } from '../utils/errors';
 
 const PLANS = [
   {
@@ -37,6 +39,8 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function BillingPage() {
+  const [billingError, setBillingError] = useState<string | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ['billing-status'],
     queryFn: () => billingApi.getStatus().then(r => r.data),
@@ -50,12 +54,16 @@ export default function BillingPage() {
         `${window.location.origin}/billing`,
       ).then(r => r.data),
     onSuccess: ({ url }) => window.location.href = url,
+    onMutate: () => setBillingError(null),
+    onError: (err) => setBillingError(parseApiError(err, 'Failed to create checkout session.')),
   });
 
   const portalMutation = useMutation({
     mutationFn: () =>
       billingApi.createPortal(`${window.location.origin}/billing`).then(r => r.data),
     onSuccess: ({ url }) => window.location.href = url,
+    onMutate: () => setBillingError(null),
+    onError: (err) => setBillingError(parseApiError(err, 'Failed to open billing portal.')),
   });
 
   const searchParams = new URLSearchParams(window.location.search);
@@ -69,6 +77,14 @@ export default function BillingPage() {
         <h1 className="text-sp-white text-2xl font-bold">Billing</h1>
         <p className="text-sp-subtext text-sm mt-1">Manage your subscription and plan.</p>
       </div>
+
+      {/* Error banner */}
+      {billingError && (
+        <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-lg px-5 py-3 text-red-400 text-sm flex items-center justify-between">
+          {billingError}
+          <button onClick={() => setBillingError(null)} className="ml-4 text-red-400/60 hover:text-red-400 transition-colors">✕</button>
+        </div>
+      )}
 
       {/* Success banner */}
       {justUpgraded && (

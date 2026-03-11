@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { analyticsApi } from '../api/analytics';
 import { instancesApi } from '../api/instances';
+import { apiClient } from '../api/client';
+import AIAdvisorPanel from '../components/AIAdvisorPanel';
 import type { Instance } from '../types/instances';
+
+const SHOW_AI_ADVISOR = import.meta.env.VITE_SHOW_AI_ADVISOR === 'true';
 
 const STATUS_STYLE: Record<Instance['status'], string> = {
   Offline:  'text-sp-subtext  bg-sp-lightgray/50',
@@ -28,8 +33,21 @@ function StatCard({ label, value, sub, loading }: { label: string; value: string
 
 export default function OverviewPage() {
   const user = useAuthStore((s) => s.user);
+  const [csvError, setCsvError] = useState<string | null>(null);
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const handleCsvExport = () => {
+    setCsvError(null);
+    apiClient.get('/analytics/export', { responseType: 'blob' }).then(r => {
+      const url = URL.createObjectURL(r.data as Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tunora-analytics.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }).catch(() => setCsvError('Export failed. Please try again.'));
+  };
+
+  const { data: stats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['analytics-overview'],
     queryFn: () => analyticsApi.getOverview().then(r => r.data),
     refetchInterval: 15_000,
@@ -43,37 +61,60 @@ export default function OverviewPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-sp-white text-2xl font-bold">
-          Welcome back{user?.firstName ? `, ${user.firstName}` : ''}
-        </h1>
-        <p className="text-sp-subtext text-sm mt-1">Here&apos;s what&apos;s happening across your locations.</p>
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="text-sp-white text-2xl font-bold">
+            Welcome back{user?.firstName ? `, ${user.firstName}` : ''}
+          </h1>
+          <p className="text-sp-subtext text-sm mt-1">Here&apos;s what&apos;s happening across your locations.</p>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleCsvExport}
+            className="text-sp-subtext hover:text-sp-white text-xs border border-sp-lightgray/40 px-3 py-1.5 rounded-full transition-colors"
+          >
+            Export CSV
+          </button>
+          {csvError && <p className="text-red-400 text-xs">{csvError}</p>}
+        </div>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <StatCard
-          label="Active Locations"
-          value={stats?.activeLocations ?? 0}
-          sub={`${stats?.playingNow ?? 0} playing now`}
-          loading={statsLoading}
-        />
-        <StatCard
-          label="Total Locations"
-          value={stats?.totalLocations ?? 0}
-          sub="Across all sites"
-          loading={statsLoading}
-        />
-        <StatCard
-          label="Scheduled Events"
-          value={stats?.schedulesThisWeek ?? 0}
-          sub="This week"
-          loading={statsLoading}
-        />
-      </div>
+      {statsError ? (
+        <div className="mb-8 bg-red-500/10 border border-red-500/30 rounded-lg px-5 py-4 text-red-400 text-sm flex items-center justify-between">
+          Could not load analytics.
+          <button
+            onClick={() => refetchStats()}
+            className="ml-4 text-red-400 hover:text-red-300 underline text-xs transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <StatCard
+            label="Active Locations"
+            value={stats?.activeLocations ?? 0}
+            sub={`${stats?.playingNow ?? 0} playing now`}
+            loading={statsLoading}
+          />
+          <StatCard
+            label="Total Locations"
+            value={stats?.totalLocations ?? 0}
+            sub="Across all sites"
+            loading={statsLoading}
+          />
+          <StatCard
+            label="Scheduled Events"
+            value={stats?.schedulesThisWeek ?? 0}
+            sub="This week"
+            loading={statsLoading}
+          />
+        </div>
+      )}
 
       {/* Instance grid */}
-      <div>
+      <div className="mb-2">
         <h2 className="text-sp-white text-lg font-semibold mb-4">Locations</h2>
 
         {instancesLoading ? (
@@ -137,6 +178,9 @@ export default function OverviewPage() {
           </div>
         )}
       </div>
+
+      {/* AI Advisor */}
+      {SHOW_AI_ADVISOR && <AIAdvisorPanel />}
     </div>
   );
 }

@@ -136,6 +136,14 @@ export default function RegisterPage() {
                 className="w-full bg-sp-lightgray text-sp-white rounded px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-sp-green placeholder-sp-subtext"
                 placeholder="Min. 8 characters"
               />
+              {form.password.length > 0 && form.password.length < 8 && (
+                <p className="text-yellow-400 text-xs mt-1">
+                  {8 - form.password.length} more character{8 - form.password.length !== 1 ? 's' : ''} needed
+                </p>
+              )}
+              {form.password.length >= 8 && (
+                <p className="text-sp-green text-xs mt-1">Looks good</p>
+              )}
             </div>
 
             {error && (

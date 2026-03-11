@@ -135,6 +135,10 @@ export default function ScheduleList({ instanceId }: Props) {
 
   const submit = () => {
     if (form.daysOfWeek.length === 0) return;
+    if (form.startTime === form.endTime) {
+      setApiError('Start and end time cannot be the same.');
+      return;
+    }
     setApiError(null);
     if (editing) {
       updateMutation.mutate({ id: editing.id, data: { ...form } });
@@ -358,9 +362,10 @@ export default function ScheduleList({ instanceId }: Props) {
                     if (window.confirm(`Delete "${s.name}"?`))
                       deleteMutation.mutate(s.id);
                   }}
-                  className="text-sp-subtext hover:text-red-400 text-xs transition-colors"
+                  disabled={deleteMutation.isPending}
+                  className="text-sp-subtext hover:text-red-400 text-xs transition-colors disabled:opacity-50"
                 >
-                  Delete
+                  {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
                 </button>
               </div>
             </div>

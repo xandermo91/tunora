@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Tunora.API.DTOs.Schedules;
 
 public record ScheduleDto(
@@ -16,12 +18,12 @@ public record ScheduleDto(
 public record CreateScheduleDto(
     int ChannelId,
     int[] DaysOfWeek,
-    string StartTime,
-    string EndTime);
+    [RegularExpression(@"^\d{2}:\d{2}$", ErrorMessage = "Must be HH:mm format.")] string StartTime,
+    [RegularExpression(@"^\d{2}:\d{2}$", ErrorMessage = "Must be HH:mm format.")] string EndTime);
 
 public record UpdateScheduleDto(
     int ChannelId,
     int[] DaysOfWeek,
-    string StartTime,
-    string EndTime,
+    [RegularExpression(@"^\d{2}:\d{2}$", ErrorMessage = "Must be HH:mm format.")] string StartTime,
+    [RegularExpression(@"^\d{2}:\d{2}$", ErrorMessage = "Must be HH:mm format.")] string EndTime,
     bool IsActive);

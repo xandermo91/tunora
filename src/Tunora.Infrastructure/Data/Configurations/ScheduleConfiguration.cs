@@ -11,7 +11,6 @@ public class ScheduleConfiguration : IEntityTypeConfiguration<Schedule>
     {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
-        builder.Property(x => x.QuartzJobKey).HasMaxLength(200);
 
         // Store DaysOfWeek array as a JSON string in SQL Server
         builder.Property(x => x.DaysOfWeek)

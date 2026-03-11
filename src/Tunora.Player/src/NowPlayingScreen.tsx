@@ -1,10 +1,11 @@
 import { usePlayerStore } from './playerStore';
 
 export default function NowPlayingScreen() {
-  const { instanceName, status, currentTrack, channelId } = usePlayerStore();
+  const { instanceName, status, hubStatus, currentTrack, channelId } = usePlayerStore();
 
   return (
     <div style={{
+      position: 'relative',
       minHeight: '100vh',
       background: '#121212',
       display: 'flex',
@@ -16,6 +17,24 @@ export default function NowPlayingScreen() {
       padding: '2rem',
       textAlign: 'center',
     }}>
+      {/* Reconnecting indicator */}
+      {hubStatus === 'reconnecting' && (
+        <div style={{
+          position: 'absolute',
+          top: '1.5rem',
+          right: '1.5rem',
+          background: '#b45309',
+          color: '#fef3c7',
+          fontSize: '0.7rem',
+          fontWeight: 600,
+          padding: '0.25rem 0.75rem',
+          borderRadius: '9999px',
+          letterSpacing: '0.05em',
+        }}>
+          Reconnecting…
+        </div>
+      )}
+
       {/* Logo area */}
       <div style={{ marginBottom: '3rem', opacity: 0.4 }}>
         <div style={{ fontSize: '1rem', letterSpacing: '0.3em', textTransform: 'uppercase' }}>

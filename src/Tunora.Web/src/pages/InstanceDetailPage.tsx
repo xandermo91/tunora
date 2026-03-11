@@ -6,6 +6,7 @@ import { playbackApi } from '../api/playback';
 import { useSignalRStore } from '../store/signalrStore';
 import { useAuthStore } from '../store/authStore';
 import ScheduleList from '../components/instances/ScheduleList';
+import { parseApiError } from '../utils/errors';
 import type { Instance } from '../types/instances';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -64,6 +65,7 @@ export default function InstanceDetailPage() {
   }, [connection, instanceId]);
 
   const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
 
   // Default selected channel to the instance's active channel, then first assigned
   useEffect(() => {
@@ -72,12 +74,17 @@ export default function InstanceDetailPage() {
     else if (merged?.channels?.[0]) setSelectedChannelId(merged.channels[0].channelId);
   }, [merged?.activeChannelId, merged?.channels, selectedChannelId]);
 
-  const playMutation   = useMutation({ mutationFn: () => playbackApi.play(instanceId, selectedChannelId!) });
-  const stopMutation   = useMutation({ mutationFn: () => playbackApi.stop(instanceId) });
-  const nextMutation   = useMutation({ mutationFn: () => playbackApi.next(instanceId) });
+  const handlePlaybackError = (err: unknown) => setPlaybackError(parseApiError(err, 'Playback command failed.'));
+  const clearPlaybackError = () => setPlaybackError(null);
+
+  const playMutation   = useMutation({ mutationFn: () => playbackApi.play(instanceId, selectedChannelId!), onMutate: clearPlaybackError, onError: handlePlaybackError });
+  const stopMutation   = useMutation({ mutationFn: () => playbackApi.stop(instanceId), onMutate: clearPlaybackError, onError: handlePlaybackError });
+  const nextMutation   = useMutation({ mutationFn: () => playbackApi.next(instanceId), onMutate: clearPlaybackError, onError: handlePlaybackError });
   const changeMutation = useMutation({
     mutationFn: (channelId: number) => playbackApi.changeChannel(instanceId, channelId),
     onSuccess: (_, channelId) => setSelectedChannelId(channelId),
+    onMutate: clearPlaybackError,
+    onError: handlePlaybackError,
   });
 
   const isPlaying = merged?.status === 'Playing';
@@ -154,6 +161,11 @@ export default function InstanceDetailPage() {
                 </button>
               ))}
             </div>
+
+            {/* Playback error */}
+            {playbackError && (
+              <p className="text-red-400 text-xs mb-3">{playbackError}</p>
+            )}
 
             {/* Play / Stop / Next */}
             <div className="flex items-center gap-3">
