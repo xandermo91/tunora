@@ -19,9 +19,16 @@ public class JamendoClient(HttpClient http, IOptions<JamendoOptions> options)
 
     public async Task<JamendoTrack?> GetTrackByTagAsync(string tag, CancellationToken ct = default)
     {
-        var offset = Random.Shared.Next(0, 50);
+        // First call: get total count so the random offset stays within bounds
+        var countUrl = $"tracks/?client_id={_opts.ClientId}&format=json&limit=1" +
+                       $"&tags={Uri.EscapeDataString(tag)}&audioformat=mp31&imagesize=500";
+        var countResponse = await http.GetFromJsonAsync<JamendoResponse>(countUrl, ct);
+        var total = countResponse?.Headers?.ResultsCount ?? 0;
+        if (total == 0) return null;
+
+        var offset = total > 1 ? Random.Shared.Next(0, Math.Min(total, 200)) : 0;
         var url = $"tracks/?client_id={_opts.ClientId}&format=json&limit=1" +
-                  $"&tags={Uri.EscapeDataString(tag)}&audioformat=mp3&offset={offset}&imagesize=500";
+                  $"&tags={Uri.EscapeDataString(tag)}&audioformat=mp31&offset={offset}&imagesize=500";
 
         var response = await http.GetFromJsonAsync<JamendoResponse>(url, ct);
         var track = response?.Results?.FirstOrDefault();
@@ -40,8 +47,17 @@ public class JamendoClient(HttpClient http, IOptions<JamendoOptions> options)
 
     private sealed class JamendoResponse
     {
+        [JsonPropertyName("headers")]
+        public JamendoHeaders? Headers { get; set; }
+
         [JsonPropertyName("results")]
         public List<JamendoTrackRaw>? Results { get; set; }
+    }
+
+    private sealed class JamendoHeaders
+    {
+        [JsonPropertyName("results_count")]
+        public int ResultsCount { get; set; }
     }
 
     private sealed class JamendoTrackRaw
