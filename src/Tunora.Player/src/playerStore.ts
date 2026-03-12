@@ -20,6 +20,7 @@ interface PlayerStore {
   hubStatus: HubStatus;
   currentTrack: CurrentTrack | null;
   error: string | null;
+  autoplayBlocked: boolean;
 
   setAuth: (token: string, instanceId: number, instanceName: string) => void;
   setChannelId: (channelId: number) => void;
@@ -27,6 +28,7 @@ interface PlayerStore {
   setHubStatus: (hubStatus: HubStatus) => void;
   setCurrentTrack: (track: CurrentTrack | null) => void;
   setError: (error: string) => void;
+  setAutoplayBlocked: (blocked: boolean) => void;
 }
 
 export const usePlayerStore = create<PlayerStore>((set) => ({
@@ -38,6 +40,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   hubStatus: 'disconnected',
   currentTrack: null,
   error: null,
+  autoplayBlocked: false,
 
   setAuth: (token, instanceId, instanceName) =>
     set({ token, instanceId, instanceName, status: 'waiting' }),
@@ -46,4 +49,5 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   setHubStatus: (hubStatus) => set({ hubStatus }),
   setCurrentTrack: (currentTrack) => set({ currentTrack }),
   setError: (error) => set({ error, status: 'error' }),
+  setAutoplayBlocked: (autoplayBlocked) => set({ autoplayBlocked }),
 }));

@@ -1,7 +1,8 @@
 import { usePlayerStore } from './playerStore';
+import { resumeAudio } from './AudioEngine';
 
 export default function NowPlayingScreen() {
-  const { instanceName, status, hubStatus, currentTrack, channelId } = usePlayerStore();
+  const { instanceName, status, hubStatus, currentTrack, channelId, autoplayBlocked } = usePlayerStore();
 
   return (
     <div style={{
@@ -17,6 +18,28 @@ export default function NowPlayingScreen() {
       padding: '2rem',
       textAlign: 'center',
     }}>
+      {/* Autoplay blocked — full-screen tap-to-play overlay */}
+      {autoplayBlocked && (
+        <div
+          onClick={() => resumeAudio?.()}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.75)',
+            cursor: 'pointer',
+            zIndex: 10,
+          }}
+        >
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>▶</div>
+          <div style={{ fontSize: '1rem', fontWeight: 600, letterSpacing: '0.05em' }}>Tap to start audio</div>
+          <div style={{ fontSize: '0.75rem', color: '#b3b3b3', marginTop: '0.5rem' }}>Browser requires a click to enable sound</div>
+        </div>
+      )}
+
       {/* Reconnecting indicator */}
       {hubStatus === 'reconnecting' && (
         <div style={{

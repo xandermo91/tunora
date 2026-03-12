@@ -11,6 +11,9 @@ interface PlaybackCommand {
   channelId?: number;
 }
 
+// Allows NowPlayingScreen to resume audio after a user gesture unblocks autoplay
+export let resumeAudio: (() => void) | null = null;
+
 export default function AudioEngine() {
   const audioRef      = useRef<HTMLAudioElement>(null);
   const hubRef        = useRef<ReturnType<typeof HubConnectionBuilder.prototype.build> | null>(null);
@@ -20,6 +23,16 @@ export default function AudioEngine() {
 
   // ── Always read the latest store values from inside handlers ────────────────
   const { token, instanceId } = usePlayerStore();
+
+  // Expose resume function so NowPlayingScreen can trigger play after user tap
+  useEffect(() => {
+    resumeAudio = () => {
+      audioRef.current?.play().then(() => {
+        usePlayerStore.getState().setAutoplayBlocked(false);
+      }).catch(console.error);
+    };
+    return () => { resumeAudio = null; };
+  }, []);
 
   // ── Report state back to dashboard ─────────────────────────────────────────
   const reportState = (status: string, chId: number | null, trackId: string | null, title: string | null, artist: string | null) => {
@@ -43,7 +56,15 @@ export default function AudioEngine() {
       retryCountRef.current = 0;
       if (audioRef.current) {
         audioRef.current.src = track.audioUrl;
-        audioRef.current.play().catch(console.error);
+        audioRef.current.play().then(() => {
+          usePlayerStore.getState().setAutoplayBlocked(false);
+        }).catch((err) => {
+          if ((err as DOMException).name === 'NotAllowedError') {
+            usePlayerStore.getState().setAutoplayBlocked(true);
+          } else {
+            console.error(err);
+          }
+        });
       }
       reportState('Playing', chId, track.trackId, track.title, track.artistName);
     } catch (err) {
@@ -144,6 +165,7 @@ export default function AudioEngine() {
         const { channelId: chId } = usePlayerStore.getState();
         if (chId) playChannel(chId);
       }}
+      onPlay={() => usePlayerStore.getState().setAutoplayBlocked(false)}
       style={{ display: 'none' }}
       crossOrigin="anonymous"
     />
